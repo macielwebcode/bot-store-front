@@ -9,25 +9,30 @@
           <div class="col-md-3 col-12 mt-5">
             <Card
               @filterCategory="filterCategory($event)"
+              @filterProductsActive="filterProductsActive()"
               @filterFavorite="filterFavorite()"
               :categories="categories"
               :favoriteActive="favoriteActive"
             />
           </div>
           <div class="col-md-9 col-12 mt-5">
-            <Search />
+            <Search 
+            @keyPress="keyPress()"/>
             <div class="price-area" v-if="!emptyPriceData">
               <Price
-                v-for="price in priceData"
-                :key="price.id"
-                :id="price.id"
-                :image="price.image"
-                :category="price.category"
-                :header="price.header"
-                :link="price.link"
-                :paragragh="price.paragragh"
-                :favorite="price.favorite"
-                :online="price.online"
+                v-for="product in productsSearch"
+                :key="product.id"
+                :id="product.id"
+                :image="product.image"
+                :name="product.name"
+                :description="product.description"
+                :value="product.value"
+                :favorite="product.favorite"
+                :active="product.active"
+                :online="product.online"
+                :category="product.category"
+                @switchActiveProduct="switchActiveProduct($event)"
+                @switchFavoriteProduct="switchFavoriteProduct($event)"
               />
             </div>
             <div class="col-md-12 col-12" v-else>
@@ -54,18 +59,20 @@
 </template>
 
 <script>
+import axios from 'axios';
 import Card from "@/common/components/layout/Card";
 import Search from "@/common/components/Search";
 import Price from "@/common/components/Price";
-import priceData from "@/static/priceData.js";
-import categories from "@/static/categories";
 export default {
   name: "Default",
   data() {
     return {
-      categories,
+      lastCategory: false,
       favoriteActive: false,
-      priceData,
+      activeProductsActive: false,
+      categories: [],
+      products: [],
+      productsSearch: [],
       avatarBackgroundImage: {
           backgroundImage: `url(${require('@/assets/media/site-images/empty.png')})`
         }
@@ -78,28 +85,127 @@ export default {
   },
   computed: {
     emptyPriceData() {
-      return this.priceData.length === 0;
+      return this.productsSearch.length === 0;
     },
     
   },
   methods: {
     filterCategory(event) {
-        this.categories.forEach(c => {
-          c.name === event ? c.active = true : c.active = false;
-        })
-        this.favoriteActive = false;
-      this.priceData = priceData.filter((p) => p.category === event);
+      if(this.lastCategory == event){
+        this.productsSearch = this.products;
+        this.lastCategory = false;
+      } else{
+        this.lastCategory = event;
+        this.productsSearch = this.products.filter((p) => p.category === event);
+      }
+      this.favoriteActive = false;
+
+      this.categories.forEach(c => {
+        c.id === event ? c.active = this.lastCategory == event : c.active = false;
+      })
     },
     filterFavorite() {
+      if(this.favoriteActive){
+        this.productsSearch = this.products;
+        this.favoriteActive = false;
+      } else {
+        this.productsSearch = this.products.filter((p) => p.favorite === true);
+        this.favoriteActive = true;
+      }
       this.categories.forEach(c => c.active = false);
-      this.favoriteActive = true;
-      this.priceData = priceData.filter((p) => p.favorite === true);
     },
+    filterProductsActive() {
+      if(this.activeProductsActive){
+        this.productsSearch = this.products;
+        this.activeProductsActive = false;
+      } else {
+        this.productsSearch = this.products.filter((p) => p.active === true);
+        this.activeProductsActive = true;
+      }
+    },
+    async getCategories() {
+      try{
+        const endpoint = "/categories";
+        const response = await axios.get(endpoint)
+
+        const results = response.data
+        this.categories = results.filter(category => category.layout_active == 1).map(category => ({
+          id: category.id,
+          name: category.title,
+          active: false,
+        }))
+      } catch(err){
+        if(err.response)
+          console.log("Server error: " + err);
+        else if(err.request)
+          console.log("Network error: "+ err);
+        else
+          console.log("Client error: "+ err);
+      }
+    },
+    async getProducts() {
+      try{
+        const endpoint = "/products";
+        // const body = {
+        //   category: category
+        // };
+        const response = await axios.get(endpoint)//, body)
+        const results = response.data
+        this.products = results.filter(product => product.layout_active == 1).map(product => ({
+          id: product.id,
+          image: "media/site-images/back-office",
+          name: product.name,
+          description: product.description,
+          value: product.value,
+          category: product.category_id,
+          active: true,
+          favorite: false,
+          online: true
+        }))
+        this.productsSearch = this.products
+      } catch(err){
+        if(err.response)
+          console.log("Server error: " + err);
+        else if(err.request)
+          console.log("Network error: "+ err);
+        else
+          console.log("Client error: "+ err);
+      }
+    },
+    async switchActiveProduct(product) {
+      const endpoint = "/products/switchactivation/" + product;
+
+      // TODO: call post action to switch product
+
+      this.products = this.products.map(p => {
+        if(p.id == product)
+          p.active = !p.active;
+        return p;
+      })
+
+    },
+    async switchFavoriteProduct(product) {
+      const endpoint = "/products/switchfavorite/" + product;
+
+      // TODO: call post action to switch favorite product
+
+      this.products = this.products.map(p => {
+        if(p.id == product)
+          p.favorite = !p.favorite;
+        return p;
+      })
+
+    }
+
   },
   watch: {
     $route(to, from) {
       to.query.favorite ? this.filterFavorite() : to.query.sectors ? this.filterCategory(to.query.sectors) : null;
-    }
+    },
+  },
+  created() {
+    this.getCategories()
+    this.getProducts()
   },
   mounted() {
     const route = this.$route;

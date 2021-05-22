@@ -34,7 +34,7 @@
             <span class="svg-icon menu-icon">
               <span class="switch switch-sm">
                 <label>
-                  <input type="checkbox" name="select" />
+                  <input type="checkbox" name="select" @click="filterProductsActive()" />
                   <span></span>
                 </label>
               </span>
@@ -45,66 +45,16 @@
           </a>
         </li>
         <li class="menu-section">
-          <h4 class="menu-text">Custom</h4>
+          <h4 class="menu-text">Categorias</h4>
           <i class="menu-icon ki ki-bold-more-hor icon-md"></i>
         </li>
         <Category
-          v-for="category in categories"
-          :key="category.name"
+          v-for="category in categories" 
+          :key="category.id"
           :name="category.name"
           :active="category.active"
-          @click="filterCategory(category.name)"
+          @click="filterCategory(category.id)"
         />
-
-        <li class="menu-section">
-          <h4 class="menu-text">Custom</h4>
-          <i class="menu-icon ki ki-bold-more-hor icon-md"></i>
-        </li>
-        <li class="menu-item menu-item-submenu">
-          <a href="#" class="menu-link">
-            <span class="menu-text">SAP</span>
-          </a>
-        </li>
-        <li class="menu-item menu-item-submenu">
-          <a href="#" class="menu-link">
-            <span class="menu-text">Totvs</span>
-          </a>
-        </li>
-        <li class="menu-item menu-item-submenu">
-          <a href="#" class="menu-link">
-            <span class="menu-text">Domínio</span>
-          </a>
-        </li>
-        <li class="menu-item menu-item-submenu">
-          <a href="#" class="menu-link">
-            <span class="menu-text">Outlook</span>
-          </a>
-        </li>
-        <li class="menu-item menu-item-submenu">
-          <a href="#" class="menu-link">
-            <span class="menu-text">Benner</span>
-          </a>
-        </li>
-        <li class="menu-item menu-item-submenu">
-          <a href="#" class="menu-link">
-            <span class="menu-text">Espaider</span>
-          </a>
-        </li>
-        <li class="menu-item menu-item-submenu">
-          <a href="#" class="menu-link">
-            <span class="menu-text">O9 Itaú</span>
-          </a>
-        </li>
-        <li class="menu-item menu-item-submenu">
-          <a href="#" class="menu-link">
-            <span class="menu-text">BJ Itaú</span>
-          </a>
-        </li>
-        <li class="menu-item menu-item-submenu">
-          <a href="#" class="menu-link">
-            <span class="menu-text">Extranet Bradesco</span>
-          </a>
-        </li>
       </ul>
       <!--end::Menu Nav-->
       <div class="ps__rail-x" style="left: 0px; bottom: -15px;">
@@ -132,11 +82,14 @@ export default {
     Category,
   },
   methods: {
-     filterCategory(name) {
-        this.$emit('filterCategory', name)
+     filterCategory(id) {
+        this.$emit('filterCategory', id)
      },
      filterFavorite() {
         this.$emit('filterFavorite');
+     },
+     filterProductsActive() {
+        this.$emit('filterProductsActive');
      }
   },
   props: ["categories", "favoriteActive"],
